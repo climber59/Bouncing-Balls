@@ -1,4 +1,4 @@
-# Balls
+# Bouncing Balls
 
 ## fullScreenBall.m
 The ball will bounce around your monitor's screen, but will only be visible if it passes through one of the 4 figures.
