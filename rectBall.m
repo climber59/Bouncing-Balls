@@ -28,9 +28,6 @@ function [] = rectBall()
 	figureSetup();
 	h = animatedline(ball.UserData.x,ball.UserData.y);
 	h.MaximumNumPoints = 100;
-% 	asd = line([0 0], [0 0]);
-% 	asdf = line([0 0], [0 0],'Color',[0 1 0]);
-% 	asdfg = line([0 0], [0 0],'Color',[1 0 0]);
 	run();
 	
 	function [] = run()
@@ -143,6 +140,8 @@ function [] = rectBall()
 	end
 	
 	function [] = click(~,~)
+		f.UserData.CurSelectionType = f.SelectionType;
+		f.WindowButtonDownFcn = {};
 		switch f.SelectionType
 			case 'normal' %left click, add rect
 				m = ax.CurrentPoint([1,3]);
@@ -164,7 +163,7 @@ function [] = rectBall()
 	end
 	
 	function [] = mouseMove(~,~)
-		switch f.SelectionType
+		switch f.UserData.CurSelectionType % f.SelectionType
 			case 'normal'
 				rects(end).XData([3,4]) = ax.CurrentPoint(1);
 				rects(end).YData([2,3]) = ax.CurrentPoint(3);
@@ -176,7 +175,7 @@ function [] = rectBall()
 	end
 	
 	function [] = unclick(~,~)
-		switch f.SelectionType
+		switch f.UserData.CurSelectionType %f.SelectionType
 			case 'normal'
 				f.WindowButtonMotionFcn = [];
 				m(1,:) = ax.UserData;
@@ -209,6 +208,7 @@ function [] = rectBall()
 				end
 				circles = circles(ishandle(circles));
 		end
+		f.WindowButtonDownFcn = @click;
 	end
 	
 	function [o] = pointInRect(x,y,r)
@@ -233,7 +233,6 @@ function [] = rectBall()
 		f = figure(1);
 		clf
 		f.MenuBar = 'none';
-		f.UserData = 1;
 		f.SizeChangedFcn = @resize;
 		f.WindowButtonDownFcn = @click;
 		f.WindowButtonUpFcn = @unclick;
