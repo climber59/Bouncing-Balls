@@ -1,3 +1,6 @@
+%{
+
+%}
 function [] = multiWindowBall()
 	clc, close all force
 	
@@ -10,14 +13,14 @@ function [] = multiWindowBall()
 	
 	v = 3;
 	dt = 0.01;
-% 	dt = 0.125;
 	
-	fprintf('\n\nDrag, resize, and delete the figures\n''Enter'' to make a new figure\n''Space'' to pause and unpause the ball\nArrow keys to change the velocity\n')
+	fprintf('\n\nMove, resize, overlap, isolate, and delete the figures\n''Enter'' to make a new figure\n''Space'' to pause and unpause the ball\nArrow keys to change the velocity\n')
 	figureSetup();
 	run();
 	
 	function [] = run()
 		while running
+			% standard physics equations to move the ball
 			vx = ball.UserData.v*cos(ball.UserData.t);
 			vy = ball.UserData.v*sin(ball.UserData.t);
 			dx = vx*dt;
@@ -30,25 +33,25 @@ function [] = multiWindowBall()
 			ball.UserData.x = x;
 			ball.UserData.y = y;
 			
-			%===================================================================================
-			% this is where the hard part starts
-			figOrder = [root.Children.UserData];
+			
+			figOrder = [root.Children.UserData]; % the order of figure windows to determine which is on top
 			
 			% jump to more forward figure if needed
 			i = 1;
 			j = false;
 			while i < length(figOrder) && ~j
-				if ball.UserData.axis == figOrder(i)
+				if ball.UserData.axis == figOrder(i) % already on the top figure at x,y
 					j = true;
-				elseif ballInRect(f(figOrder(i))) 
+				elseif ballInRect(f(figOrder(i)))
 					[x,y] = jump(ball.UserData.axis,figOrder(i));
 					j = true;
 				end
 				i = i + 1;
 			end
-
-			cf = ball.UserData.axis;
-			bir = ballInRect(f);
+			
+			% Bounce checks
+			cf = ball.UserData.axis; % current figure index
+			bir = ballInRect(f); % bool array of whether its in each figure
 			
 			if sum(bir)==0 % just bounce off the figure it's in now
 				if x<=0 || x>=ball.Parent.XLim(2) %bounce on right/left wall
@@ -65,7 +68,7 @@ function [] = multiWindowBall()
 			ball.UserData.t = atan2(vy, vx);
 			
 			if needsDeleting
-				deleteAFig(needsDeleting);
+				deleteAFig(needsDeleting); % ensures closed figures are deleted at a time when they won't cause errors
 			end
 			
 			pause(dt);
@@ -75,8 +78,9 @@ function [] = multiWindowBall()
 		end
 	end
 	
+	% handles moving the ball to a new figure
 	function [x,y] = jump(from, to)
-		%convert axis x,y to screen x,y, to new axis x,y
+		%convert axis x,y to screen x,y, then to new axis x,y
 		x = ball.UserData.x + f(from).Position(1) - f(to).Position(1);
 		y = ball.UserData.y + f(from).Position(2) - f(to).Position(2);
 
@@ -90,6 +94,7 @@ function [] = multiWindowBall()
 		ball.Parent = ax(to);
 	end
 	
+	% Creates the initial graphics objects
 	function [] = figureSetup()
 		
 		for i = 1:max(length(root.Children),2)
@@ -109,25 +114,27 @@ function [] = multiWindowBall()
 		ball.UserData.axis = 2;
 	end
 	
+	% returns whether the ball is within the bounds of fig
 	function [o] = ballInRect(fig)
 		o = ones(size(fig));
 		for i = 1:length(fig)
 			x = ball.UserData.x + ball.Parent.Parent.Position(1);
 			y = ball.UserData.y + ball.Parent.Parent.Position(2);
-			% If one rectangle is on left side of other
+			% If the ball is left of the fig
 			if x > sum(fig(i).Position([1,3])) || fig(i).Position(1) > x
 				o(i) = false;
 			end
-			% If one rectangle is above other
+			% If the ball is above the fig
 			if y < fig(i).Position(2) || sum(fig(i).Position([2,4])) < y
 				o(i) = false;
 			end
 		end
 	end
 	
+	% handles resizing figures
 	function [] = resize(src,~)
 		a = src.Children;
-		a.XLim(2) = src.Position(3);
+		a.XLim(2) = src.Position(3); % adjust axis size
 		a.YLim(2) = src.Position(4);
 
 		% need to check if ball is now outside visible axes
@@ -149,17 +156,18 @@ function [] = multiWindowBall()
 				if running
 					run();
 				end
-			case 'uparrow'
+			case 'uparrow' % raise speed
 				ball.UserData.v = ball.UserData.v*1.1;
-			case 'downarrow'
+			case 'downarrow' % decrease speed
 				ball.UserData.v = ball.UserData.v/1.1;
-			case 'leftarrow'
+			case 'leftarrow' % turn
 				ball.UserData.t = ball.UserData.t + pi/12;
-			case 'rightarrow'
+			case 'rightarrow' % turn the other way
 				ball.UserData.t = ball.UserData.t - pi/12;
 		end
 	end
 	
+	% handles creating and intializing new figures and axes
 	function [] = newFigure()
 		n = length(f)+1;
 		if n==1
@@ -187,6 +195,8 @@ function [] = multiWindowBall()
 		xlim manual
 	end
 	
+	% marks figure for deletion when closed by the user. Prevents errors if
+	% they were closed in the middle of a function
 	function [] = figClose(src,~)
 		if ~running
 			deleteAFig(src.UserData);
@@ -195,23 +205,24 @@ function [] = multiWindowBall()
 		end
 	end
 	
+	% deletes closed figures without causing errors
 	function [] = deleteAFig(n)
 		% move the ball if needed
 		if ball.UserData.axis == f(n).UserData
 			if length(f)==1
-				running = false;
+				running = false; % stop the main loop if the last figure is closed
 			else
 				figs = [root.Children.UserData];
-				new = figs(find(n~=figs,1));
+				new = figs(find(n~=figs,1)); % pick the top figure
 				jump(n,new);
-				resize(f(new));
+				resize(f(new)); % resize() will put the ball on screen if it isn't already
 			end
 		end
 		
 		delete(f(n)) %delete fig
 		ax = ax(ishandle(f)); %clean arrays
 		f = f(ishandle(f));
-		for i = 1:length(f) %get store new indices
+		for i = 1:length(f) %get & store new indices
 			if ball.UserData.axis == f(i).UserData
 				ball.UserData.axis = i;
 			end
