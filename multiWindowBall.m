@@ -12,7 +12,7 @@ function [] = multiWindowBall()
 	dt = 0.01;
 % 	dt = 0.125;
 	
-	fprintf('\n\nDrag, resize, and delete the figuress\n''Space'' to make a new figure\n''Enter'' to pause and unpause the ball\nArrow keys to change the velocity\n')
+	fprintf('\n\nDrag, resize, and delete the figures\n''Enter'' to make a new figure\n''Space'' to pause and unpause the ball\nArrow keys to change the velocity\n')
 	figureSetup();
 	run();
 	
@@ -142,9 +142,9 @@ function [] = multiWindowBall()
 	function [] = keyPress(~,evt)
 % 		evt.Key
 		switch evt.Key
-			case 'space' % new fig
+			case 'return' % new fig
 				newFigure();
-			case 'return' % (un)pause
+			case 'space' % (un)pause
 				running = ~running;
 				if running
 					run();
